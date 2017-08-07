@@ -449,20 +449,7 @@ public class VideoMediaStreamImpl
      * the incoming RTP streams.
      */
     private final RemoteBitrateEstimator remoteBitrateEstimator
-        = new RemoteBitrateEstimatorSingleStream(
-                new RemoteBitrateObserver()
-                {
-                    @Override
-                    public void onReceiveBitrateChanged(
-                            Collection<Integer> ssrcs,
-                            long bitrate)
-                    {
-                        VideoMediaStreamImpl.this
-                            .remoteBitrateEstimatorOnReceiveBitrateChanged(
-                                    ssrcs,
-                                    bitrate);
-                    }
-                });
+        = new RemoteBitrateEstimatorSingleStream(this);
 
     /**
      * The facility which aids this instance in managing a list of
@@ -519,17 +506,6 @@ public class VideoMediaStreamImpl
         SrtpControl srtpControl)
     {
         super(connector, device, srtpControl);
-
-        // Register the RemoteBitrateEstimator with the
-        // RecurringRunnableExecutor.
-        RemoteBitrateEstimator remoteBitrateEstimator
-            = getRemoteBitrateEstimator();
-
-        if (remoteBitrateEstimator instanceof RecurringRunnable)
-        {
-            recurringRunnableExecutor.registerRecurringRunnable(
-                    (RecurringRunnable) remoteBitrateEstimator);
-        }
 
         recurringRunnableExecutor.registerRecurringRunnable(rtcpFeedbackTermination);
     }
@@ -625,17 +601,6 @@ public class VideoMediaStreamImpl
         }
         finally
         {
-            // Deregister the RemoteBitrateEstimator with the
-            // RecurringRunnableExecutor.
-            RemoteBitrateEstimator remoteBitrateEstimator
-                = getRemoteBitrateEstimator();
-
-            if (remoteBitrateEstimator instanceof RecurringRunnable)
-            {
-                recurringRunnableExecutor.deRegisterRecurringRunnable(
-                        (RecurringRunnable) remoteBitrateEstimator);
-            }
-
             if (cachingTransformer != null)
             {
                 recurringRunnableExecutor.deRegisterRecurringRunnable(
@@ -1221,7 +1186,7 @@ public class VideoMediaStreamImpl
      * @param ssrcs
      * @param bitrate
      */
-    private void remoteBitrateEstimatorOnReceiveBitrateChanged(
+    public void remoteBitrateEstimatorOnReceiveBitrateChanged(
             Collection<Integer> ssrcs,
             long bitrate)
     {
